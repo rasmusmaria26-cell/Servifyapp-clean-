@@ -1,7 +1,7 @@
 package com.servify.app.di
 
-import com.servify.app.data.repository.marketplace.MarketplaceRepositoryImpl
-import com.servify.app.domain.repository.MarketplaceRepository
+import com.servify.app.feature.marketplace.data.MarketplaceRepositoryImpl
+import com.servify.app.feature.marketplace.domain.MarketplaceRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

@@ -17,21 +17,21 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.AnimatedContentTransitionScope
 import com.servify.app.core.AppMode
 import com.servify.app.core.RenderCapabilities
-import com.servify.app.presentation.auth.LoginScreen
-import com.servify.app.presentation.customer.ActiveRepairScreen
-import com.servify.app.presentation.customer.BookingDetailScreen
-import com.servify.app.presentation.customer.CreateBookingScreen
-import com.servify.app.presentation.customer.CustomerDashboardScreen
-import com.servify.app.presentation.customer.CustomerDashboardViewModel
-import com.servify.app.presentation.customer.PostRepairRequestScreen
-import com.servify.app.presentation.customer.QuoteManagementScreen
-import com.servify.app.presentation.home.HomeScreen
+import com.servify.app.feature.auth.presentation.LoginScreen
+import com.servify.app.feature.customer.presentation.ActiveRepairScreen
+import com.servify.app.feature.customer.presentation.BookingDetailScreen
+import com.servify.app.feature.customer.presentation.CreateBookingScreen
+import com.servify.app.feature.customer.presentation.CustomerDashboardScreen
+import com.servify.app.feature.customer.presentation.CustomerDashboardViewModel
+import com.servify.app.feature.customer.presentation.PostRepairRequestScreen
+import com.servify.app.feature.customer.presentation.QuoteManagementScreen
+import com.servify.app.feature.customer.presentation.HomeScreen
 import com.servify.app.presentation.splash.SplashScreen
-import com.servify.app.presentation.vendor.RepairFeedScreen
-import com.servify.app.presentation.vendor.RepairFeedViewModel
-import com.servify.app.presentation.vendor.SubmitQuoteScreen
-import com.servify.app.presentation.vendor.VendorDashboardScreen
-import com.servify.app.presentation.customer.LocationMapScreen
+import com.servify.app.feature.vendor.presentation.RepairFeedScreen
+import com.servify.app.feature.vendor.presentation.RepairFeedViewModel
+import com.servify.app.feature.vendor.presentation.SubmitQuoteScreen
+import com.servify.app.feature.vendor.presentation.VendorDashboardScreen
+import com.servify.app.feature.customer.presentation.LocationMapScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 
@@ -114,7 +114,7 @@ fun ServifyNavHost(
         }
 
         composable(ServifyRoutes.SIGNUP) {
-            com.servify.app.presentation.auth.SignupScreen(
+            com.servify.app.feature.auth.presentation.SignupScreen(
                 onNavigateToLogin  = { navController.popBackStack() },
                 onSignupSuccess    = { role ->
                     if (role == "customer") {
@@ -198,8 +198,8 @@ fun ServifyNavHost(
                 CustomerDashboardScreen(
                     selectedTab = 0,
                     viewModel = viewModel,
-                    onNavigateToBooking = { navController.navigate(ServifyRoutes.CREATE_BOOKING) },
-                    onNavigateToRepairRequest = { navController.navigate(ServifyRoutes.POST_REPAIR_REQUEST) },
+                    onNavigateToBooking = { cat -> navController.navigate(ServifyRoutes.createBooking(cat)) },
+                    onNavigateToRepairRequest = { navController.navigate(ServifyRoutes.postRepairRequest()) },
                     onNavigateToQuotes = { id -> navController.navigate(ServifyRoutes.quotes(id)) },
                     onNavigateToActiveRepair = { id -> navController.navigate(ServifyRoutes.activeRepair(id)) },
                     onNavigateToBookingDetail = { id -> navController.navigate(ServifyRoutes.bookingDetail(id)) },
@@ -252,8 +252,8 @@ fun ServifyNavHost(
                 CustomerDashboardScreen(
                     selectedTab = 1,
                     viewModel = viewModel,
-                    onNavigateToBooking = { navController.navigate(ServifyRoutes.CREATE_BOOKING) },
-                    onNavigateToRepairRequest = { navController.navigate(ServifyRoutes.POST_REPAIR_REQUEST) },
+                    onNavigateToBooking = { cat -> navController.navigate(ServifyRoutes.createBooking(cat)) },
+                    onNavigateToRepairRequest = { navController.navigate(ServifyRoutes.postRepairRequest()) },
                     onNavigateToQuotes = { id -> navController.navigate(ServifyRoutes.quotes(id)) },
                     onNavigateToActiveRepair = { id -> navController.navigate(ServifyRoutes.activeRepair(id)) },
                     onNavigateToBookingDetail = { id -> navController.navigate(ServifyRoutes.bookingDetail(id)) },
@@ -306,8 +306,8 @@ fun ServifyNavHost(
                 CustomerDashboardScreen(
                     selectedTab = 2,
                     viewModel = viewModel,
-                    onNavigateToBooking = { navController.navigate(ServifyRoutes.CREATE_BOOKING) },
-                    onNavigateToRepairRequest = { navController.navigate(ServifyRoutes.POST_REPAIR_REQUEST) },
+                    onNavigateToBooking = { cat -> navController.navigate(ServifyRoutes.createBooking(cat)) },
+                    onNavigateToRepairRequest = { navController.navigate(ServifyRoutes.postRepairRequest()) },
                     onNavigateToQuotes = { id -> navController.navigate(ServifyRoutes.quotes(id)) },
                     onNavigateToActiveRepair = { id -> navController.navigate(ServifyRoutes.activeRepair(id)) },
                     onNavigateToBookingDetail = { id -> navController.navigate(ServifyRoutes.bookingDetail(id)) },
@@ -360,8 +360,8 @@ fun ServifyNavHost(
                 CustomerDashboardScreen(
                     selectedTab = 3,
                     viewModel = viewModel,
-                    onNavigateToBooking = { navController.navigate(ServifyRoutes.CREATE_BOOKING) },
-                    onNavigateToRepairRequest = { navController.navigate(ServifyRoutes.POST_REPAIR_REQUEST) },
+                    onNavigateToBooking = { cat -> navController.navigate(ServifyRoutes.createBooking(cat)) },
+                    onNavigateToRepairRequest = { navController.navigate(ServifyRoutes.postRepairRequest()) },
                     onNavigateToQuotes = { id -> navController.navigate(ServifyRoutes.quotes(id)) },
                     onNavigateToActiveRepair = { id -> navController.navigate(ServifyRoutes.activeRepair(id)) },
                     onNavigateToBookingDetail = { id -> navController.navigate(ServifyRoutes.bookingDetail(id)) },
@@ -394,8 +394,17 @@ fun ServifyNavHost(
 
         // --- Customer Screens ---
 
-        composable(ServifyRoutes.CREATE_BOOKING) {
+        composable(
+            route = ServifyRoutes.CREATE_BOOKING,
+            arguments = listOf(navArgument("category") { 
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            })
+        ) { backStackEntry ->
+            val category = backStackEntry.arguments?.getString("category")
             CreateBookingScreen(
+                initialCategory  = category,
                 onNavigateBack   = { navController.popBackStack() },
                 onBookingCreated = { navController.popBackStack() }
             )
@@ -403,7 +412,7 @@ fun ServifyNavHost(
 
         composable(ServifyRoutes.BOOKING_DETAIL) { backStackEntry ->
             val bookingId = backStackEntry.arguments?.getString("bookingId") ?: return@composable
-            val viewModel = hiltViewModel<com.servify.app.presentation.customer.BookingDetailViewModel>()
+            val viewModel = hiltViewModel<com.servify.app.feature.customer.presentation.BookingDetailViewModel>()
             
             androidx.compose.runtime.LaunchedEffect(bookingId) {
                 viewModel.fetchBooking(bookingId)
@@ -418,8 +427,17 @@ fun ServifyNavHost(
             )
         }
 
-        composable(ServifyRoutes.POST_REPAIR_REQUEST) {
+        composable(
+            route = ServifyRoutes.POST_REPAIR_REQUEST,
+            arguments = listOf(navArgument("category") { 
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            })
+        ) { backStackEntry ->
+            val category = backStackEntry.arguments?.getString("category")
             PostRepairRequestScreen(
+                initialCategory = category,
                 onNavigateBack = { navController.popBackStack() },
                 onSubmitted    = { requestId ->
                     navController.navigate(ServifyRoutes.quotes(requestId)) {

@@ -33,10 +33,10 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.servify.app.core.AppMode
 import com.servify.app.core.RenderCapabilities
-import com.servify.app.ui.theme.GLASS_ALPHA_DARK
-import com.servify.app.ui.theme.GLASS_ALPHA_LIGHT
-import com.servify.app.ui.theme.SOLID_ALPHA_DARK
-import com.servify.app.ui.theme.SOLID_ALPHA_LIGHT
+import com.servify.app.designsystem.theme.GLASS_ALPHA_DARK
+import com.servify.app.designsystem.theme.GLASS_ALPHA_LIGHT
+import com.servify.app.designsystem.theme.SOLID_ALPHA_DARK
+import com.servify.app.designsystem.theme.SOLID_ALPHA_LIGHT
 
 /**
  * Dual-mode bottom navigation bar.

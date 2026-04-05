@@ -13,6 +13,6 @@ object AppModule {
     @Provides
     @Singleton
     fun provideSupabaseClient(): io.github.jan.supabase.SupabaseClient {
-        return com.servify.app.data.remote.SupabaseClientProvider.client
+        return com.servify.app.core.network.SupabaseClientProvider.client
     }
 }

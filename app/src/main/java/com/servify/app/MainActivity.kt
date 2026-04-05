@@ -16,7 +16,7 @@ import com.servify.app.core.UserSession
 import com.servify.app.navigation.ServifyBottomNavBar
 import com.servify.app.navigation.ServifyNavHost
 import com.servify.app.navigation.ServifyRoutes
-import com.servify.app.ui.theme.ServifyTheme
+import com.servify.app.designsystem.theme.ServifyTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -40,10 +40,13 @@ class MainActivity : ComponentActivity() {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
 
-                val showBottomBar = currentRoute !in listOf(
-                    ServifyRoutes.SPLASH,
-                    ServifyRoutes.LOGIN,
-                    ServifyRoutes.SIGNUP
+                val showBottomBar = currentRoute in listOf(
+                    ServifyRoutes.CUSTOMER_HOME,
+                    ServifyRoutes.CUSTOMER_ORDERS,
+                    ServifyRoutes.CUSTOMER_REPAIRS,
+                    ServifyRoutes.CUSTOMER_PROFILE,
+                    ServifyRoutes.HOME,
+                    ServifyRoutes.REPAIR_FEED
                 )
 
                 Scaffold(
