@@ -18,6 +18,7 @@ if (localPropertiesFile.exists()) {
 val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
 val supabaseUrl = localProperties.getProperty("SUPABASE_URL") ?: ""
 val supabaseKey = localProperties.getProperty("SUPABASE_KEY") ?: ""
+val razorpayTestKeyId = localProperties.getProperty("RAZORPAY_TEST_KEY_ID") ?: ""
 
 android {
     namespace = "com.servify.app"
@@ -39,6 +40,7 @@ android {
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
         buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
         buildConfigField("String", "SUPABASE_KEY", "\"$supabaseKey\"")
+        buildConfigField("String", "RAZORPAY_TEST_KEY_ID", "\"$razorpayTestKeyId\"")
     }
 
     buildTypes {

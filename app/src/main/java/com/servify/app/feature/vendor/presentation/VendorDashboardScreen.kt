@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Brush
 fun VendorDashboardScreen(
     viewModel: VendorDashboardViewModel = hiltViewModel(),
     onNavigateToRepairFeed: () -> Unit = {},
+    onNavigateToBookingDetail: (String) -> Unit = {},
     onSignOut: () -> Unit = {},
     onNavigateToMap: (String, Double, Double) -> Unit = { _, _, _ -> }
 ) {
@@ -252,6 +253,7 @@ fun VendorDashboardScreen(
                                 items(filteredBookings) { booking ->
                                     VendorBookingCard(
                                         booking = booking,
+                                        onNavigateToBookingDetail = onNavigateToBookingDetail,
                                         onStatusUpdate = { status ->
                                             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                                             viewModel.updateBookingStatus(booking.id, status)
@@ -272,6 +274,7 @@ fun VendorDashboardScreen(
 @Composable
 fun VendorBookingCard(
     booking: Booking,
+    onNavigateToBookingDetail: (String) -> Unit,
     onStatusUpdate: (String) -> Unit,
     onNavigateToMap: (String, Double, Double) -> Unit
 ) {
@@ -293,7 +296,7 @@ fun VendorBookingCard(
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = { /* Navigate to details */ }
+                onClick = { onNavigateToBookingDetail(booking.id) }
             ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.03f)),

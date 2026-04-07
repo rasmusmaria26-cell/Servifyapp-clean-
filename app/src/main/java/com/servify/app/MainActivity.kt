@@ -17,6 +17,10 @@ import com.servify.app.navigation.ServifyBottomNavBar
 import com.servify.app.navigation.ServifyNavHost
 import com.servify.app.navigation.ServifyRoutes
 import com.servify.app.designsystem.theme.ServifyTheme
+import com.razorpay.PaymentData
+import com.razorpay.PaymentResultListener
+import com.razorpay.PaymentResultWithDataListener
+import com.servify.app.core.payment.PaymentResultDispatcher
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -29,7 +33,7 @@ import dagger.hilt.android.AndroidEntryPoint
  * - Propagates the resolved user role to [UserSession] to trigger mode-switching.
  */
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), PaymentResultListener, PaymentResultWithDataListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -74,5 +78,18 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onPaymentSuccess(razorpayPaymentId: String?) {
+        PaymentResultDispatcher.dispatchSuccess(razorpayPaymentId)
+    }
+    override fun onPaymentError(code: Int, response: String?) {
+        PaymentResultDispatcher.dispatchError(code, response)
+    }
+    override fun onPaymentSuccess(razorpayPaymentId: String?, paymentData: PaymentData?) {
+        PaymentResultDispatcher.dispatchSuccess(razorpayPaymentId)
+    }
+    override fun onPaymentError(code: Int, response: String?, paymentData: PaymentData?) {
+        PaymentResultDispatcher.dispatchError(code, response)
     }
 }

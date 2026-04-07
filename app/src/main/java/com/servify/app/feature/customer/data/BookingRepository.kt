@@ -4,7 +4,18 @@ import android.util.Log
 import com.servify.app.feature.customer.data.Booking
 import com.servify.app.core.network.SupabaseClientProvider
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.realtime
+import io.github.jan.supabase.storage.storage
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -151,6 +162,80 @@ class BookingRepository @Inject constructor(
         } catch (e: Exception) {
             Log.e("BookingRepository", "Failed to fetch booking by ID", e)
             Result.failure(e)
+        }
+    }
+
+    suspend fun uploadBookingImage(bytes: ByteArray, fileName: String): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val path = "booking_${java.util.UUID.randomUUID()}_$fileName"
+            supabase.storage.from("booking-images").upload(path, bytes)
+            val url = supabase.storage.from("booking-images").publicUrl(path)
+            Result.success(url)
+        } catch (e: Exception) {
+            Log.e("BookingRepository", "Failed to upload booking image", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun proposePriceForBooking(bookingId: String, price: Double): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            supabase.from("bookings").update(
+                buildJsonObject {
+                    put("status", "PRICE_PROPOSED")
+                    put("final_cost", price)
+                }
+            ) {
+                filter { eq("id", bookingId) }
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("BookingRepository", "Failed to propose price for booking", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun confirmBookingPayment(bookingId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            supabase.from("bookings").update(
+                buildJsonObject {
+                    put("status", "ACCEPTED")
+                    put("payment_status", "PAID")
+                }
+            ) {
+                filter { eq("id", bookingId) }
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("BookingRepository", "Failed to confirm booking payment", e)
+            Result.failure(e)
+        }
+    }
+
+    fun observeBooking(bookingId: String): Flow<Booking> = callbackFlow {
+        val channel = supabase.realtime.channel("booking_$bookingId")
+        val changes = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+            table = "bookings"
+            filter = "id=eq.$bookingId"
+        }
+
+        val job = CoroutineScope(Dispatchers.IO).launch {
+            // Initial fetch
+            getBookingById(bookingId).onSuccess { trySend(it) }
+
+            changes.collect { action ->
+                if (action is PostgresAction.Update) {
+                    getBookingById(bookingId).onSuccess { trySend(it) }
+                }
+            }
+        }
+
+        channel.subscribe()
+
+        awaitClose {
+            job.cancel()
+            CoroutineScope(Dispatchers.IO).launch {
+                channel.unsubscribe()
+            }
         }
     }
 }

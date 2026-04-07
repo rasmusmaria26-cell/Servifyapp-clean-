@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -650,173 +651,179 @@ fun SchedulingStep(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Text(
-            text = "Schedule Service",
-            style = MaterialTheme.typography.headlineSmall,
-            fontFamily = SpaceGrotesk,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "Pick a convenient time for the service.",
-            style = MaterialTheme.typography.bodyMedium,
-            fontFamily = Inter,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Date Field
-        Box(modifier = Modifier.fillMaxWidth()) {
-            OutlinedTextField(
-                value = selectedDate,
-                onValueChange = { },
-                label = { Text("Service Date") },
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = true,
-                trailingIcon = {
-                    IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.Event, contentDescription = "Select Date", tint = MaterialTheme.colorScheme.primary)
-                    }
-                },
-                shape = RoundedCornerShape(14.dp),
-                colors = darkFieldColors
-            )
-            Box(modifier = Modifier.matchParentSize().clickable { showDatePicker = true })
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Time Field
-        Box(modifier = Modifier.fillMaxWidth()) {
-            OutlinedTextField(
-                value = selectedTime,
-                onValueChange = { },
-                label = { Text("Service Time") },
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = true,
-                trailingIcon = {
-                    IconButton(onClick = { showTimePicker = true }) {
-                        Icon(Icons.Default.Schedule, contentDescription = "Select Time", tint = MaterialTheme.colorScheme.primary)
-                    }
-                },
-                shape = RoundedCornerShape(14.dp),
-                colors = darkFieldColors
-            )
-            Box(modifier = Modifier.matchParentSize().clickable { showTimePicker = true })
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Map View
-        val context = LocalContext.current
-        val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
-        
-        val permissionLauncher = rememberLauncherForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { permissions ->
-            if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
-                try {
-                    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                        if (location != null) {
-                            onLocationSelected(location.latitude, location.longitude)
-                        }
-                    }
-                } catch (e: SecurityException) { }
-            }
-        }
-        
-        fun requestLocation() {
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                try {
-                    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                        if (location != null) {
-                            onLocationSelected(location.latitude, location.longitude)
-                        }
-                    }
-                } catch (e: SecurityException) { }
-            } else {
-                permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
-            }
-        }
-
-        LaunchedEffect(Unit) {
-            Configuration.getInstance().load(context, context.getSharedPreferences("osmdroid", android.content.Context.MODE_PRIVATE))
-        }
-
-        Box(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(180.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
         ) {
-            AndroidView(
-                factory = { ctx ->
-                    MapView(ctx).apply {
-                        setMultiTouchControls(true)
-                        controller.setZoom(15.0)
-                        val initialPoint = GeoPoint(latitude ?: 28.6139, longitude ?: 77.2090)
-                        controller.setCenter(initialPoint)
+            Text(
+                text = "Schedule Service",
+                style = MaterialTheme.typography.headlineSmall,
+                fontFamily = SpaceGrotesk,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Pick a convenient time for the service.",
+                style = MaterialTheme.typography.bodyMedium,
+                fontFamily = Inter,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
-                        addMapListener(object : org.osmdroid.events.MapListener {
-                            override fun onScroll(event: org.osmdroid.events.ScrollEvent?): Boolean {
-                                val center = mapCenter
-                                onLocationSelected(center.latitude, center.longitude)
-                                return true
-                            }
-                            override fun onZoom(event: org.osmdroid.events.ZoomEvent?) = false
-                        })
-                    }
-                },
-                update = { view ->
-                    if (latitude != null && longitude != null) {
-                        val dist = Math.abs(view.mapCenter.latitude - latitude) + Math.abs(view.mapCenter.longitude - longitude)
-                        if (dist > 0.0001) {
-                            view.controller.animateTo(GeoPoint(latitude, longitude))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Date Field
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = selectedDate,
+                    onValueChange = { },
+                    label = { Text("Service Date") },
+                    modifier = Modifier.fillMaxWidth(),
+                    readOnly = true,
+                    trailingIcon = {
+                        IconButton(onClick = { showDatePicker = true }) {
+                            Icon(Icons.Default.Event, contentDescription = "Select Date", tint = MaterialTheme.colorScheme.primary)
                         }
-                    }
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-            Icon(
-                imageVector = Icons.Default.LocationOn,
-                contentDescription = "Pinpoint",
-                tint = ErrorRed,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .size(36.dp)
-                    .offset(y = (-18).dp)
-            )
-            
-            // Locate Me Button
-            SmallFloatingActionButton(
-                onClick = { requestLocation() },
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = ServifyBlue,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(12.dp)
-            ) {
-                Icon(Icons.Default.MyLocation, contentDescription = "Locate Me")
+                    },
+                    shape = RoundedCornerShape(14.dp),
+                    colors = darkFieldColors
+                )
+                Box(modifier = Modifier.matchParentSize().clickable { showDatePicker = true })
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Address Field
-        OutlinedTextField(
-            value = address,
-            onValueChange = onAddressChange,
-            label = { Text("Service Address") },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
-            colors = darkFieldColors
-        )
+            // Time Field
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = selectedTime,
+                    onValueChange = { },
+                    label = { Text("Service Time") },
+                    modifier = Modifier.fillMaxWidth(),
+                    readOnly = true,
+                    trailingIcon = {
+                        IconButton(onClick = { showTimePicker = true }) {
+                            Icon(Icons.Default.Schedule, contentDescription = "Select Time", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    },
+                    shape = RoundedCornerShape(14.dp),
+                    colors = darkFieldColors
+                )
+                Box(modifier = Modifier.matchParentSize().clickable { showTimePicker = true })
+            }
 
-        Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Map View
+            val context = LocalContext.current
+            val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+            
+            val permissionLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestMultiplePermissions()
+            ) { permissions ->
+                if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                    permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
+                    try {
+                        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                            if (location != null) {
+                                onLocationSelected(location.latitude, location.longitude)
+                            }
+                        }
+                    } catch (e: SecurityException) { }
+                }
+            }
+            
+            fun requestLocation() {
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    try {
+                        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                            if (location != null) {
+                                onLocationSelected(location.latitude, location.longitude)
+                            }
+                        }
+                    } catch (e: SecurityException) { }
+                } else {
+                    permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                Configuration.getInstance().load(context, context.getSharedPreferences("osmdroid", android.content.Context.MODE_PRIVATE))
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
+            ) {
+                AndroidView(
+                    factory = { ctx ->
+                        MapView(ctx).apply {
+                            setMultiTouchControls(true)
+                            controller.setZoom(15.0)
+                            val initialPoint = GeoPoint(latitude ?: 28.6139, longitude ?: 77.2090)
+                            controller.setCenter(initialPoint)
+
+                            addMapListener(object : org.osmdroid.events.MapListener {
+                                override fun onScroll(event: org.osmdroid.events.ScrollEvent?): Boolean {
+                                    val center = mapCenter
+                                    onLocationSelected(center.latitude, center.longitude)
+                                    return true
+                                }
+                                override fun onZoom(event: org.osmdroid.events.ZoomEvent?) = false
+                            })
+                        }
+                    },
+                    update = { view ->
+                        if (latitude != null && longitude != null) {
+                            val dist = Math.abs(view.mapCenter.latitude - latitude) + Math.abs(view.mapCenter.longitude - longitude)
+                            if (dist > 0.0001) {
+                                view.controller.animateTo(GeoPoint(latitude, longitude))
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+                Icon(
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = "Pinpoint",
+                    tint = ErrorRed,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(36.dp)
+                        .offset(y = (-18).dp)
+                )
+                
+                // Locate Me Button
+                SmallFloatingActionButton(
+                    onClick = { requestLocation() },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = ServifyBlue,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(12.dp)
+                ) {
+                    Icon(Icons.Default.MyLocation, contentDescription = "Locate Me")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Address Field
+            OutlinedTextField(
+                value = address,
+                onValueChange = onAddressChange,
+                label = { Text("Service Address") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = darkFieldColors
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+        } // End of scrolling column
 
         ServifyButton(
             text = "Review & Confirm",
@@ -835,121 +842,128 @@ fun ConfirmationStep(
     onConfirmClick: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        Text(
-            text = "Review Booking",
-            style = MaterialTheme.typography.headlineSmall,
-            fontFamily = SpaceGrotesk,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                LabelValueRow("Service", uiState.selectedServiceCategory ?: "N/A")
-                LabelValueRow("Vendor", uiState.selectedVendor?.businessName ?: "N/A")
-                LabelValueRow("Date", uiState.selectedDate)
-                LabelValueRow("Time", uiState.selectedTime)
-                LabelValueRow("Address", uiState.address)
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 12.dp),
-                    color = MaterialTheme.colorScheme.outline
-                )
-                LabelValueRow("Rate", "₹${uiState.selectedVendor?.hourlyRate ?: 0}/hr", isBold = true)
-            }
-        }
+            Text(
+                text = "Review Booking",
+                style = MaterialTheme.typography.headlineSmall,
+                fontFamily = SpaceGrotesk,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
 
-        uiState.aiDiagnosis?.let { diagnosis ->
-            Spacer(modifier = Modifier.height(16.dp))
-
-            val urgencyColor = when (diagnosis.urgency) {
-                "High" -> ErrorRed
-                "Medium" -> AmberAccent
-                else -> SuccessGreen
-            }
+            Spacer(modifier = Modifier.height(24.dp))
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                border = BorderStroke(1.dp, urgencyColor.copy(alpha = 0.3f))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "AI Diagnosis",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
-                            fontFamily = SpaceGrotesk
-                        )
-                        Box(
-                            modifier = Modifier
-                                .background(urgencyColor.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                    LabelValueRow("Service", uiState.selectedServiceCategory ?: "N/A")
+                    LabelValueRow("Vendor", uiState.selectedVendor?.businessName ?: "N/A")
+                    LabelValueRow("Date", uiState.selectedDate)
+                    LabelValueRow("Time", uiState.selectedTime)
+                    LabelValueRow("Address", uiState.address)
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                    LabelValueRow("Rate", "₹${uiState.selectedVendor?.hourlyRate ?: 0}/hr", isBold = true)
+                }
+            }
+
+            uiState.aiDiagnosis?.let { diagnosis ->
+                Spacer(modifier = Modifier.height(16.dp))
+
+                val urgencyColor = when (diagnosis.urgency) {
+                    "High" -> ErrorRed
+                    "Medium" -> AmberAccent
+                    else -> SuccessGreen
+                }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                    border = BorderStroke(1.dp, urgencyColor.copy(alpha = 0.3f))
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = diagnosis.urgency,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = urgencyColor,
-                                fontWeight = FontWeight.Bold
+                                text = "AI Diagnosis",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary,
+                                fontFamily = SpaceGrotesk
                             )
+                            Box(
+                                modifier = Modifier
+                                    .background(urgencyColor.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = diagnosis.urgency,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = urgencyColor,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(diagnosis.diagnosis, style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(diagnosis.urgencyReason, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = DarkBorder)
-
-                    LabelValueRow("Est. cost", diagnosis.estimatedCost)
-                    LabelValueRow("Est. time", diagnosis.estimatedTime)
-
-                    if (diagnosis.customerAdvice.isNotBlank()) {
                         Spacer(modifier = Modifier.height(12.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(AmberAccent.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
-                                .padding(10.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(text = "Tip", style = MaterialTheme.typography.labelSmall, color = AmberAccent, fontWeight = FontWeight.Bold)
-                            Text(text = diagnosis.customerAdvice, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                        Text(diagnosis.diagnosis, style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(diagnosis.urgencyReason, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = DarkBorder)
+
+                        LabelValueRow("Est. cost", diagnosis.estimatedCost)
+                        LabelValueRow("Est. time", diagnosis.estimatedTime)
+
+                        if (diagnosis.customerAdvice.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(AmberAccent.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
+                                    .padding(10.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(text = "Tip", style = MaterialTheme.typography.labelSmall, color = AmberAccent, fontWeight = FontWeight.Bold)
+                                Text(text = diagnosis.customerAdvice, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                            }
                         }
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(24.dp))
+        } // End of scrolling column
 
         if (uiState.error != null) {
             Text(
                 text = uiState.error,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             )
         }
 
         ServifyButton(
             text = "Confirm Booking",
             onClick = onConfirmClick,
-            isLoading = uiState.isCreatingBooking
+            isLoading = uiState.isCreatingBooking,
+            modifier = Modifier.padding(bottom = 16.dp)
         )
     }
 }

@@ -22,6 +22,8 @@ data class Booking(
     val issueDescription: String,
     @SerialName("ai_diagnosis")
     val aiDiagnosis: AIDiagnosis?,
+    @SerialName("image_urls")
+    val imageUrls: List<String> = emptyList(),
     @SerialName("scheduled_date")
     val scheduledDate: String,
     @SerialName("scheduled_time")

@@ -2,26 +2,28 @@ package com.servify.app.feature.customer.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.graphics.Bitmap
+import com.servify.app.core.model.AIDiagnosis
+import com.servify.app.core.network.GeminiApiClient
 import com.servify.app.feature.customer.data.Booking
-import com.servify.app.feature.vendor.domain.Vendor
+import com.servify.app.feature.customer.data.BookingRepository
 import com.servify.app.feature.customer.domain.usecase.CreateBookingUseCase
+import com.servify.app.feature.vendor.domain.Vendor
 import com.servify.app.feature.vendor.domain.usecase.GetMatchedVendorsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 import javax.inject.Inject
-import android.graphics.Bitmap
-import com.servify.app.core.model.AIDiagnosis
-import com.servify.app.core.network.GeminiApiClient
 
 @HiltViewModel
 class CreateBookingViewModel @Inject constructor(
     private val getMatchedVendorsUseCase: GetMatchedVendorsUseCase,
     private val createBookingUseCase: CreateBookingUseCase,
+    private val bookingRepository: BookingRepository,
     private val geminiApiClient: GeminiApiClient
 ) : ViewModel() {
 
@@ -136,7 +138,18 @@ class CreateBookingViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isCreatingBooking = true, error = null) }
-            
+
+            // Upload bitmaps to Supabase storage and collect URLs
+            val imageUrls = mutableListOf<String>()
+            currentState.selectedBitmaps.forEachIndexed { index, bitmap ->
+                val out = ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, out)
+                bookingRepository.uploadBookingImage(
+                    bytes = out.toByteArray(),
+                    fileName = "photo_$index.jpg"
+                ).onSuccess { url -> imageUrls.add(url) }
+            }
+
             createBookingUseCase(
                 serviceCategory = currentState.selectedServiceCategory ?: "AC Repair",
                 issueDescription = currentState.issueDescription,
@@ -152,20 +165,21 @@ class CreateBookingViewModel @Inject constructor(
                     ?.split("-")
                     ?.firstOrNull()
                     ?.trim()
-                    ?.toDoubleOrNull()
+                    ?.toDoubleOrNull(),
+                imageUrls = imageUrls
             ).onSuccess { booking ->
-                _uiState.update { 
+                _uiState.update {
                     it.copy(
-                        isCreatingBooking = false, 
-                        bookingCreated = true 
-                    ) 
+                        isCreatingBooking = false,
+                        bookingCreated = true
+                    )
                 }
             }.onFailure { error ->
-                _uiState.update { 
+                _uiState.update {
                     it.copy(
-                        isCreatingBooking = false, 
+                        isCreatingBooking = false,
                         error = "Booking failed: ${error.message}"
-                    ) 
+                    )
                 }
             }
         }

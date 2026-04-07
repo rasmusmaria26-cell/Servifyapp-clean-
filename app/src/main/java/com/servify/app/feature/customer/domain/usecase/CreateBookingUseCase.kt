@@ -26,7 +26,8 @@ class CreateBookingUseCase @Inject constructor(
         latitude: Double? = null,
         longitude: Double? = null,
         vendorId: String?,
-        estimatedPrice: Double?
+        estimatedPrice: Double?,
+        imageUrls: List<String> = emptyList()
     ): Result<Booking> {
         val userProfile = authRepository.getCurrentUser()
             ?: return Result.failure(Exception("User not logged in"))
@@ -72,6 +73,7 @@ class CreateBookingUseCase @Inject constructor(
             longitude = longitude,
             estimatedPrice = estimatedPrice,
             finalPrice = null,
+            imageUrls = imageUrls,
             status = "PENDING",
             paymentStatus = "PENDING",
             createdAt = createdAt

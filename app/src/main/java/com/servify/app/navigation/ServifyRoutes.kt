@@ -1,5 +1,7 @@
 package com.servify.app.navigation
 
+import android.net.Uri
+
 /**
  * Single source of truth for all navigation route strings.
  * Never use raw string literals for navigation routes elsewhere in the codebase.
@@ -38,7 +40,14 @@ object ServifyRoutes {
     // Vendor screens
     const val REPAIR_FEED   = "repair_feed"
     const val SUBMIT_QUOTE  = "submit_quote"
+    const val VENDOR_BOOKING_DETAIL = "vendor_booking_detail/{bookingId}"
+    fun vendorBookingDetail(bookingId: String) = "vendor_booking_detail/$bookingId"
     
     const val LOCATION_MAP    = "location_map/{title}/{lat}/{lng}"
     fun locationMap(title: String, lat: Double, lng: Double) = "location_map/$title/$lat/$lng"
+
+    // Payment screen
+    const val PAYMENT = "payment/{amount}/{description}/{vendorName}/{bookingId}"
+    fun payment(amount: Long, description: String, vendorName: String, bookingId: String = "") =
+        "payment/$amount/${Uri.encode(description)}/${Uri.encode(vendorName)}/${Uri.encode(bookingId)}"
 }
